@@ -9,7 +9,7 @@
 
 
 # Документация API
-Restaurant Menu - **[API redoc]()**
+Restaurant Menu - **[API redoc](https://clownvkkaschenko.github.io/RestaurantMenuAPI/)**
 
 <details><summary><h1>Запуск проекта без докера</h1></summary>
 
