@@ -15,6 +15,10 @@ Restaurant Menu - **[API redoc](https://clownvkkaschenko.github.io/RestaurantMen
 
 - Клонируйте репозиторий и перейдите в него.
 - Установите и активируйте виртуальное окружение(venv).
+  ```
+  python3.10 -m venv venv
+  source venv/Scripts/activate
+  ```
 - Создайте файл **.env**, с переменными окружения.
     ```
     DB_HOST=localhost
