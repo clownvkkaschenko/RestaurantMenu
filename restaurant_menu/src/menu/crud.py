@@ -419,13 +419,17 @@ async def update_dish_by_id(
 
 async def delete_dish_by_id(
         db: AsyncSession,
+        menu: models.Menu,
         submenu: models.SubMenu,
         dish_id: UUID,
 ) -> None:
     """Удаляем один объект из модели «Dish» по полю «id».
 
+    Меняем количество блюд в меню и подменю.
+
     Args:
         - db (AsyncSession): Асинхронная сессия для подключения к БД.
+        - menu: Объект меню.
         - submenu: Объект подменю.
         - dish_id (UUID): id блюда.
 
@@ -436,5 +440,6 @@ async def delete_dish_by_id(
     await db.execute(delete(models.Dish).where(models.Dish.id == dish_id))
     await db.commit()
 
+    menu.dishes_count -= 1
     submenu.dishes_count -= 1
     await db.commit()

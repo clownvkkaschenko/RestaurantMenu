@@ -255,10 +255,14 @@ async def delete_dish(
 ) -> Dict[str, Union[bool, str]]:
     """Удалаяем блюдо."""
 
+    menu: Optional[models.Menu] = await crud.get_menu_by_id(
+        db=db, menu_id=menu_id
+    )
+
     submenu: Optional[models.SubMenu] = await crud.get_submenu_by_id(
         db=db, menu_id=menu_id, submenu_id=submenu_id
     )
 
-    await crud.delete_dish_by_id(db=db, submenu=submenu, dish_id=dish_id)
+    await crud.delete_dish_by_id(db=db, menu=menu, submenu=submenu, dish_id=dish_id)
 
     return {"status": True, "message": "The dish has been deleted"}
