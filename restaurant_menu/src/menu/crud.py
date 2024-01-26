@@ -1,16 +1,49 @@
 """CRUD-functions."""
 
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import delete, select
+from sqlalchemy import Row, delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.menu import models
 
 
-# --- CRUD for Menu ---
+async def get_counts_submenus_and_dishes_from_menu(
+        db: AsyncSession,
+        menu_id: UUID
+) -> Row[Tuple[models.Menu, int, int]]:
+    """ORM запрос для вывода количества подменю и количества блюд для меню."""
+
+    query = (
+        select(
+            models.Menu,
+            func.count(models.SubMenu.id.distinct()).label('submenus_count'),
+            func.count(models.Dish.id.distinct()).label('dishes_count')
+        )
+        .where(models.Menu.id == menu_id)
+        .select_from(models.Menu).outerjoin(models.SubMenu).outerjoin(models.Dish)
+        .group_by(models.Menu.id)
+    )
+
+    result = await db.execute(query)
+    menu_info: Row[Tuple[models.Menu, int, int]] | None = result.fetchone()
+
+    if menu_info is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='menu not found',
+        )
+
+    return menu_info
+
+
+# ==============================================================================
+# ==============================================================================
+#                           --- CRUD for Menu ---
+# ==============================================================================
+# ==============================================================================
 async def create_menu(
         db: AsyncSession,
         title: str,
@@ -143,7 +176,11 @@ async def delete_menu_by_id(
     await db.commit()
 
 
-# --- CRUD for Submenu ---
+# ==============================================================================
+# ==============================================================================
+#                           --- CRUD for Submenu ---
+# ==============================================================================
+# ==============================================================================
 async def create_submenu(
         db: AsyncSession,
         menu_id: UUID,
@@ -285,7 +322,11 @@ async def delete_submenu_by_id(
     await db.commit()
 
 
-# --- CRUD for Dish ---
+# ==============================================================================
+# ==============================================================================
+#                           --- CRUD for Dish ---
+# ==============================================================================
+# ==============================================================================
 async def create_dish(
         db: AsyncSession,
         menu_id: UUID,

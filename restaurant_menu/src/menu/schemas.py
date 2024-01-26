@@ -3,7 +3,7 @@
 from typing import Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class DeleteObjPyd(BaseModel):
@@ -59,6 +59,20 @@ class DetailedMenuInfoPyd(BaseMenuPyd):
     dishes_count: int = Field(description='Количество блюд')
 
 
+class SmallMenuInfoPyd(BaseMenuPyd):
+    """Pydantic модель c информацией о меню, без количества блюд и подменю.
+
+    Количество блюд и подменю будем получать с помощью ORM запроса.
+
+    Fields:
+        - id: UUID
+        - title: str
+        - description: str
+    """
+
+    id: UUID = Field(description='id меню в БД')
+
+
 # --- Pydantic models for Submenu ---
 class DetailedSubmenuInfoPyd(BaseMenuPyd):
     """Pydantic модель с подробной информацией о подменю.
@@ -104,7 +118,7 @@ class DetailedDishInfoPyd(BaseModel):
     description: str = Field(description='Описание блюда')
     price: Union[float, str] = Field(description='Цена блюда')
 
-    @validator('price')
+    @field_validator('price')
     @classmethod
     def check_price(cls, value):
         # Использую тип str, что-бы тесты в postman прошли

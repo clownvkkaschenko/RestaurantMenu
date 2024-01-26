@@ -11,3 +11,6 @@ POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD')
 DB_HOST = os.environ.get('DB_HOST')
 DB_PORT = os.environ.get('DB_PORT')
 DB_NAME = os.environ.get('DB_NAME')
+
+# data db for tests
+DB_HOST_TEST = os.environ.get('DB_HOST_TEST')

@@ -10,7 +10,11 @@ from src.menu import crud, models, schemas
 menu_router = APIRouter()
 
 
-# --- Routes for Menu ---
+# ==============================================================================
+# ==============================================================================
+#                           --- Routes for Menu ---
+# ==============================================================================
+# ==============================================================================
 @menu_router.post('/api/v1/menus', response_model=schemas.DetailedMenuInfoPyd, status_code=201,
                   summary='Создать меню', tags=['Меню'])
 async def new_menu(
@@ -37,12 +41,21 @@ async def all_menus(db: AsyncSession = Depends(get_db)) -> List[Optional[models.
 async def get_menu(
     menu_id: UUID = Path(..., description='id меню'),
     db: AsyncSession = Depends(get_db),
-) -> Optional[models.Menu]:
+) -> schemas.DetailedMenuInfoPyd:
     """Выводим определённое меню по его «id»."""
 
-    menu: Optional[models.Menu] = await crud.get_menu_by_id(db=db, menu_id=menu_id)
+    menu, submenus_count, dishes_count = await crud.get_counts_submenus_and_dishes_from_menu(
+        db=db,
+        menu_id=menu_id,
+    )
 
-    return menu
+    menu_info = schemas.SmallMenuInfoPyd.model_validate({**menu.__dict__})
+
+    return schemas.DetailedMenuInfoPyd.model_validate(
+        {
+            **menu_info.model_dump(),
+            **{'submenus_count': submenus_count, 'dishes_count': dishes_count}
+        })
 
 
 @menu_router.patch('/api/v1/menus/{menu_id}', response_model=schemas.DetailedMenuInfoPyd,
@@ -79,7 +92,11 @@ async def delete_menu(
     return {"status": True, "message": "The menu has been deleted"}
 
 
-# --- Routes for Submenu ---
+# ==============================================================================
+# ==============================================================================
+#                           --- Routes for Submenu ---
+# ==============================================================================
+# ==============================================================================
 @menu_router.post('/api/v1/menus/{menu_id}/submenus',
                   response_model=schemas.DetailedSubmenuInfoPyd,
                   status_code=201, summary='Создать подменю', tags=['Подменю'])
@@ -168,7 +185,11 @@ async def delete_submenu(
     return {"status": True, "message": "The submenu has been deleted"}
 
 
-# --- Routes for Dish ---
+# ==============================================================================
+# ==============================================================================
+#                           --- Routes for Dish ---
+# ==============================================================================
+# ==============================================================================
 @menu_router.post('/api/v1/menus/{menu_id}/submenus/{submenu_id}/dishes',
                   response_model=schemas.DetailedDishInfoPyd,
                   status_code=201, summary='Создать блюдо', tags=['Блюдо'])

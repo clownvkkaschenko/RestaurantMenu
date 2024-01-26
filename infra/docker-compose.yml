@@ -4,7 +4,7 @@ services:
 
   db:
     container_name: postgresql_db
-    image: postgres:13.0-alpine
+    image: postgres:15.1-alpine
     restart: always
     ports:
       - "5432:5432"
@@ -13,16 +13,46 @@ services:
     env_file:
       - ./.env
 
+  db_for_tests:
+    container_name: postgresql_db_for_tests
+    image: postgres:15.1-alpine
+    restart: always
+    ports:
+      - "6000:5432"
+    volumes:
+      - database_for_tests:/var/lib/postgresql/data/
+    env_file:
+      - ./.env
+
   backend:
     container_name: backend
-    build: ../restaurant_menu/
+    build:
+      context: ../restaurant_menu/
+      dockerfile: Dockerfile.api
     restart: always
     ports:
     - "8000:8000"
+    volumes:
+      - backend_volume:/app/src
     depends_on:
       - db
+      - db_for_tests
+    env_file:
+      - ./.env
+
+  tests:
+    container_name: tests
+    build:
+      context: ../restaurant_menu/
+      dockerfile: Dockerfile.tests
+    volumes:
+      - backend_volume:/app/src
+    depends_on:
+      - backend
     env_file:
       - ./.env
 
 volumes:
   database:
+  database_for_tests:
+  backend_volume:

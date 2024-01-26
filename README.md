@@ -5,56 +5,31 @@
   <img src="https://img.shields.io/badge/PostgreSQL-555555?style=for-the-badge&logo=postgresql&logoColor=F5F5DC">
   <img src="https://img.shields.io/badge/SQLAlchemy-2.0.25-F8F8FF?style=for-the-badge&logo=SQLAlchemy&logoColor=20B2AA">
   <img src="https://img.shields.io/badge/Docker-555555?style=for-the-badge&logo=docker&logoColor=2496ED">
+  <img src="https://img.shields.io/badge/Pytest-555555?style=for-the-badge&logo=pytest&logoColor=0A9EDC">
 </div>
 
+# Задание 2:
+- ORM запрос, для вывода количества подменю и блюд для меню, написан в файле **menu/crud.py**, в функции «**[get_counts_submenus_and_dishes_from_menu](restaurant_menu/src/menu/crud.py#get_counts_submenus_and_dishes_from_menu)**».
+- CRUD тесты для разработанного API написаны в файле **[tests/test_routers.py](restaurant_menu/tests/test_routers.py)**
+- Тестовый сценарий «Проверка количества блюд и подменю в меню» из Postman реализован в файле **[tests/test_script_count_dishes_and_submenus.py](restaurant_menu/tests/test_script_count_dishes_and_submenus.py)**
 
-# Документация API
+# Документация API:
 Restaurant Menu - **[API redoc](https://clownvkkaschenko.github.io/RestaurantMenuAPI/)**
 
-<details><summary><h1>Запуск проекта без докера</h1></summary>
-
-- Клонируйте репозиторий и перейдите в него.
-- Установите и активируйте виртуальное окружение(venv).
-  ```
-  python3.10 -m venv venv
-  source venv/Scripts/activate
-  ```
-- Создайте файл **.env**, с переменными окружения.
-    ```
-    DB_HOST=localhost
-    DB_PORT=5432
-    DB_NAME=postgres
-    POSTGRES_USER=postgres
-    POSTGRES_PASSWORD=postgres
-    ```
-- Перейдите в папку **restaurant_menu**. Установите зависимости из файла requirements.txt
-    ```
-    python -m pip install --upgrade pip
-    pip install -r requirements.txt
-    ``` 
-- Выполните миграции.
-  ```
-  alembic upgrade head
-  ```
-- Запустите сервер:
-  ```
-  uvicorn src.main:app --reload
-  ```
-- Документация к API будет доступна по url-адресу [127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
-
-</details>
-
-<details><summary><h1>Запуск проекта через докер</h1></summary>
+# Запуск проекта через докер:
 
 - Клонируйте репозиторий и перейдите в него.
 - Перейдите в папку **infra**. Создайте файл **.env**, с переменными окружения.
-    ```
+  ```
   DB_HOST=db
   DB_PORT=5432
   DB_NAME=postgres
   POSTGRES_USER=postgres
   POSTGRES_PASSWORD=postgres
-    ``` 
+
+  # data db for tests
+  DB_HOST_TEST=db_for_tests
+  ``` 
 - Находясь в папке **infra** запустите docker-compose:
   ```
   ~$ docker-compose up -d --build
@@ -63,12 +38,15 @@ Restaurant Menu - **[API redoc](https://clownvkkaschenko.github.io/RestaurantMen
   ```
   ~$ docker-compose exec backend alembic upgrade head
   ```
+- Для запуска тестов выполните команду: 
+  ```
+  ~$ docker-compose up tests
+  ```
 
 Документация к API будет доступна по url-адресу [127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
 
-</details>
 
-# ТЗ проекта
+# Техническое задание проекта:
 Написать проект на FastAPI с использованием PostgreSQL в качестве БД. В проекте следует реализовать REST API по работе с меню ресторана, все CRUD операции.
 
 Даны 3 сущности: Меню, Подменю, Блюдо.
@@ -78,7 +56,7 @@ Restaurant Menu - **[API redoc](https://clownvkkaschenko.github.io/RestaurantMen
 - У меню есть подменю, которые к ней привязаны.
 - У подменю есть блюда.
 
-Условия:
+Условия первого задания:
 - Блюдо не может быть привязано напрямую к меню, минуя подменю.
 - Блюдо не может находиться в 2-х подменю одновременно.
 - Подменю не может находиться в 2-х меню одновременно.
@@ -87,3 +65,11 @@ Restaurant Menu - **[API redoc](https://clownvkkaschenko.github.io/RestaurantMen
 - Цены блюд выводить с округлением до 2 знаков после запятой.
 - Во время выдачи списка меню, для каждого меню добавлять кол-во подменю и блюд в этом меню.
 - Во время выдачи списка подменю, для каждого подменю добавлять кол-во блюд в этом подменю.
+
+Условия второго задания:
+- Написать CRUD тесты для ранее разработанного API с помощью библиотеки pytest.
+- Подготовить отдельный контейнер для запуска тестов.
+- Реализовать вывод количества подменю и количества блюд для меню через один ORM запрос.
+- Реализовать тестовый сценарий «Проверка количества блюд и количества подменю в меню» из тестов Postman с помощью pytest.
+
+
