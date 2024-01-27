@@ -22,7 +22,7 @@ jobs:
               --health-interval 10s
               --health-timeout 5s
               --health-retries 5
-
+  
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
@@ -42,7 +42,7 @@ jobs:
     - name: Test with Pytest (menu/routers)
       run: |
         pytest -v restaurant_menu/tests/test_routers.py
-    - name: Test with Pytest (postman script)
+    - name: Test with Pytest (postman-script)
       run: |
         pytest -v restaurant_menu/tests/test_script_count_dishes_and_submenus.py
       env:
