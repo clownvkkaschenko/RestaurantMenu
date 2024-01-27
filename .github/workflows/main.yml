@@ -9,6 +9,13 @@ jobs:
   tests:
     runs-on: ubuntu-latest
 
+    env:
+      DB_HOST_TEST: ${{ secrets.DB_HOST_TEST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+
     services:
       postgres:
         image: postgres:15.1-alpine
@@ -49,9 +56,3 @@ jobs:
     - name: Test with Pytest (postman-script)
       run: |
         pytest -v restaurant_menu/tests/test_script_count_dishes_and_submenus.py
-      env:
-        DB_HOST_TEST: ${{ secrets.DB_HOST_TEST }}
-        DB_PORT: ${{ secrets.DB_PORT }}
-        DB_NAME: ${{ secrets.DB_NAME }}
-        POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-        POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
