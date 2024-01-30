@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 from src.configs import (DB_HOST_TEST, DB_NAME, DB_PORT, POSTGRES_PASSWORD,
                          POSTGRES_USER)
-from src.database import Base, get_db
+from src.database import Base
 from src.main import app
 
 DATABASE_URL_TEST = (
@@ -25,12 +25,10 @@ async_session_maker = sessionmaker(
 Base.bind = async_engine_test
 
 
+@pytest.fixture(scope='function')
 async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
     async with async_session_maker() as session:
         yield session
-
-
-app.dependency_overrides[get_db] = override_get_db
 
 
 @pytest.fixture(autouse=True, scope='session')
@@ -77,3 +75,51 @@ def fixture_new_dish():
     """Фикстура для нового блюда."""
 
     return {}
+
+
+# Сразу создаём меню и подменю, для возможности создать зависимые от них объекты.
+# @pytest.fixture(scope='session')
+# async def fixture_create_menu(override_get_db):
+#     """Фикстура с меню, для тестирования."""
+
+#     stmt = insert(models.Menu).values(
+#         title='Тестовое меню 1',
+#         description='Описание тестового меню 1'
+#     )
+
+#     await override_get_db.execute(stmt)
+#     await override_get_db.commit()
+
+#     query = (
+#         select(models.Menu).
+#         order_by(models.Menu.id.desc()).limit(1)
+#     )
+#     result = await override_get_db.execute(query)
+#     result = result.scalars().one_or_none()
+#     assert result is not None, 'Меню не добавилось.'
+
+#     return result
+
+
+# @pytest.fixture(scope='session')
+# async def fixture_create_submenu(override_get_db, fixture_create_menu):
+#     """Фикстура с подменю, для тестирования."""
+
+#     stmt = insert(models.SubMenu).values(
+#         menu_id=fixture_create_menu.id,
+#         title='Тестовое подменю 1',
+#         description='Описание тестового подменю 1'
+#     )
+
+#     await override_get_db.execute(stmt)
+#     await override_get_db.commit()
+
+#     query = (
+#         select(models.SubMenu).
+#         order_by(models.SubMenu.id.desc()).limit(1)
+#     )
+#     result = await override_get_db.execute(query)
+#     result = result.scalars().one_or_none()
+#     assert result is not None, 'Подменю не добавилось.'
+
+#     return result

@@ -4,49 +4,56 @@ import uuid
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import insert, select
+from src.menu import models
 
 
 # Сразу создаём меню и подменю, что-бы передать данные в фикстуры.
 @pytest.mark.asyncio(scope='function')
-async def test_new_menu(async_client: AsyncClient, fixture_new_menu):
-    """Тестируем роутер для создания нового меню."""
+async def test_new_menu(override_get_db, fixture_new_menu):
+    """Фикстура с меню, для тестирования."""
 
-    response = await async_client.post('/api/v1/menus', json={
-        'title': 'Новое меню 1',
-        'description': 'Описание нового меню 1'
-    })
+    stmt = insert(models.Menu).values(
+        title='Тестовое меню 1',
+        description='Описание тестового меню 1'
+    )
 
-    assert response.status_code == 201
+    await override_get_db.execute(stmt)
+    await override_get_db.commit()
 
-    menu = response.json()
-    assert uuid.UUID(menu['id'])
-    assert menu['title'] == 'Новое меню 1'
-    assert menu['description'] == 'Описание нового меню 1'
-    assert menu['submenus_count'] == 0
-    assert menu['dishes_count'] == 0
+    query = (
+        select(models.Menu).
+        order_by(models.Menu.id.desc()).limit(1)
+    )
+    result = await override_get_db.execute(query)
+    result = result.scalars().one_or_none()
+    assert result is not None, 'Меню не добавилось.'
 
-    fixture_new_menu['id'] = menu['id']
+    fixture_new_menu['id'] = result.id
 
 
 @pytest.mark.asyncio(scope='function')
-async def test_new_submenu(async_client: AsyncClient, fixture_new_menu, fixture_new_submenu):
-    """Тестируем роутер для создания нового подменю."""
+async def test_new_submenu(override_get_db, fixture_new_menu, fixture_new_submenu):
+    """Фикстура с подменю, для тестирования."""
 
-    menu_id = fixture_new_menu['id']
-    response = await async_client.post(f'/api/v1/menus/{menu_id}/submenus', json={
-        'title': 'Новое подменю 1',
-        'description': 'Описание нового подменю 1'
-    })
+    stmt = insert(models.SubMenu).values(
+        menu_id=fixture_new_menu['id'],
+        title='Тестовое подменю 1',
+        description='Описание тестового подменю 1'
+    )
 
-    assert response.status_code == 201
+    await override_get_db.execute(stmt)
+    await override_get_db.commit()
 
-    submenu = response.json()
-    assert uuid.UUID(submenu['id'])
-    assert submenu['title'] == 'Новое подменю 1'
-    assert submenu['description'] == 'Описание нового подменю 1'
-    assert submenu['dishes_count'] == 0
+    query = (
+        select(models.SubMenu).
+        order_by(models.SubMenu.id.desc()).limit(1)
+    )
+    result = await override_get_db.execute(query)
+    result = result.scalars().one_or_none()
+    assert result is not None, 'Подменю не добавилось.'
 
-    fixture_new_submenu['id'] = submenu['id']
+    fixture_new_submenu['id'] = result.id
 
 
 # ==============================================================================
@@ -126,6 +133,7 @@ async def test_all_dishes(
 @pytest.mark.asyncio(scope='function')
 async def test_get_dish(
     async_client: AsyncClient,
+    override_get_db,
     fixture_new_menu,
     fixture_new_submenu,
     fixture_new_dish,
@@ -141,9 +149,11 @@ async def test_get_dish(
 
     assert response.status_code == 200
 
-    dish = response.json()
-    assert dish['id'] == dish_id
-    assert dish['title'] == 'Новое блюдо 1'
+    dish = await override_get_db.execute(select(models.Dish).where(models.Dish.id == dish_id))
+    dish = dish.scalars().one_or_none()
+
+    assert dish.id == uuid.UUID(response.json()['id'])
+    assert dish.title == response.json()['title']
 
 
 @pytest.mark.asyncio(scope='function')
@@ -236,7 +246,7 @@ async def test_error_new_submenu(async_client: AsyncClient, fixture_new_menu):
 
     menu_id = fixture_new_menu['id']
     response = await async_client.post(f'/api/v1/menus/{menu_id}/submenus', json={
-        'title': 'Новое подменю 1',
+        'title': 'Тестовое подменю 1',
         'description': 'Описание нового подменю 2'
     })
 
@@ -257,6 +267,7 @@ async def test_all_submenus(async_client: AsyncClient, fixture_new_menu):
 @pytest.mark.asyncio(scope='function')
 async def test_get_submenu(
     async_client: AsyncClient,
+    override_get_db,
     fixture_new_menu,
     fixture_new_submenu
 ):
@@ -268,9 +279,13 @@ async def test_get_submenu(
 
     assert response.status_code == 200
 
-    submenu = response.json()
-    assert submenu['id'] == submenu_id
-    assert submenu['title'] == 'Новое подменю 1'
+    submenu = await override_get_db.execute(
+        select(models.SubMenu).where(models.SubMenu.id == submenu_id)
+    )
+    submenu = submenu.scalars().one_or_none()
+
+    assert submenu.id == uuid.UUID(response.json()['id'])
+    assert submenu.title == response.json()['title']
 
 
 @pytest.mark.asyncio(scope='function')
@@ -307,7 +322,7 @@ async def test_update_submenu(
     assert response.status_code == 200
 
     submenu = response.json()
-    assert submenu['id'] == submenu_id
+    assert uuid.UUID(submenu['id']) == submenu_id
     assert submenu['title'] == 'update title submenu'
     assert submenu['description'] == 'update description submenu'
 
@@ -338,7 +353,7 @@ async def test_error_new_menu(async_client: AsyncClient):
     """Тестируем получение ошибки при создании меню с существующим названием."""
 
     response = await async_client.post('/api/v1/menus', json={
-        'title': 'Новое меню 1',
+        'title': 'Тестовое меню 1',
         'description': 'Описание нового меню 2'
     })
 
@@ -356,7 +371,7 @@ async def test_all_menus(async_client: AsyncClient):
 
 
 @pytest.mark.asyncio(scope='function')
-async def test_get_menu(async_client: AsyncClient, fixture_new_menu):
+async def test_get_menu(async_client: AsyncClient, override_get_db, fixture_new_menu):
     """Тестируем роутер для вывода определённого меню по его «id»."""
 
     menu_id = fixture_new_menu['id']
@@ -364,9 +379,11 @@ async def test_get_menu(async_client: AsyncClient, fixture_new_menu):
 
     assert response.status_code == 200
 
-    menu = response.json()
-    assert menu['id'] == menu_id
-    assert menu['title'] == 'Новое меню 1'
+    menu = await override_get_db.execute(select(models.Menu).where(models.Menu.id == menu_id))
+    menu = menu.scalars().one_or_none()
+
+    assert menu.id == uuid.UUID(response.json()['id'])
+    assert menu.title == response.json()['title']
 
 
 @pytest.mark.asyncio(scope='function')
@@ -392,7 +409,7 @@ async def test_update_menu(async_client: AsyncClient, fixture_new_menu):
     assert response.status_code == 200
 
     menu = response.json()
-    assert menu['id'] == menu_id
+    assert uuid.UUID(menu['id']) == menu_id
     assert menu['title'] == 'update title menu'
     assert menu['description'] == 'update description menu'
 

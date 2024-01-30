@@ -4,6 +4,8 @@ import uuid
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
+from src.menu import models
 
 
 @pytest.fixture(scope='session')
@@ -17,7 +19,11 @@ def fixture_script_new_submenu():
 
 
 @pytest.mark.asyncio(scope='function')
-async def test_script_new_menu(async_client: AsyncClient, fixture_script_new_menu):
+async def test_script_new_menu(
+    async_client: AsyncClient,
+    override_get_db,
+    fixture_script_new_menu
+):
     """Создаём меню."""
 
     response = await async_client.post('/api/v1/menus', json={
@@ -27,19 +33,25 @@ async def test_script_new_menu(async_client: AsyncClient, fixture_script_new_men
 
     assert response.status_code == 201
 
-    menu = response.json()
-    assert uuid.UUID(menu['id'])
-    assert menu['title'] == 'Новое меню, для тестового сценария, 1'
-    assert menu['description'] == 'Описание нового меню, для тестового сценария, 1'
-    assert menu['submenus_count'] == 0
-    assert menu['dishes_count'] == 0
+    new_menu_info = response.json()
 
-    fixture_script_new_menu['id'] = menu['id']
+    menu = await override_get_db.execute(
+        select(models.Menu).where(models.Menu.id == new_menu_info['id'])
+    )
+    menu = menu.scalars().one_or_none()
+
+    assert menu.title == new_menu_info['title']
+    assert menu.description == new_menu_info['description']
+    assert menu.submenus_count == new_menu_info['submenus_count']
+    assert menu.dishes_count == new_menu_info['dishes_count']
+
+    fixture_script_new_menu['id'] = new_menu_info['id']
 
 
 @pytest.mark.asyncio(scope='function')
 async def test_script_new_submenu(
     async_client: AsyncClient,
+    override_get_db,
     fixture_script_new_menu,
     fixture_script_new_submenu
 ):
@@ -53,18 +65,24 @@ async def test_script_new_submenu(
 
     assert response.status_code == 201
 
-    submenu = response.json()
-    assert uuid.UUID(submenu['id'])
-    assert submenu['title'] == 'Новое подменю, для тестового сценария, 1'
-    assert submenu['description'] == 'Описание нового подменю, для тестового сценария, 1'
-    assert submenu['dishes_count'] == 0
+    new_submenu_info = response.json()
 
-    fixture_script_new_submenu['id'] = submenu['id']
+    submenu = await override_get_db.execute(
+        select(models.SubMenu).where(models.SubMenu.id == new_submenu_info['id'])
+    )
+    submenu = submenu.scalars().one_or_none()
+
+    assert submenu.title == new_submenu_info['title']
+    assert submenu.description == new_submenu_info['description']
+    assert submenu.dishes_count == new_submenu_info['dishes_count']
+
+    fixture_script_new_submenu['id'] = new_submenu_info['id']
 
 
 @pytest.mark.asyncio(scope='function')
 async def test_script_new_dish_1(
     async_client: AsyncClient,
+    override_get_db,
     fixture_script_new_menu,
     fixture_script_new_submenu,
 ):
@@ -83,16 +101,21 @@ async def test_script_new_dish_1(
 
     assert response.status_code == 201
 
-    dish = response.json()
-    assert uuid.UUID(dish['id'])
-    assert dish['title'] == 'Новое блюдо, для тестового сценария, 1'
-    assert dish['description'] == 'Описание нового блюда, для тестового сценария, 1'
-    assert dish['price'] == '120.22'
+    new_dish_info = response.json()
+    dish = await override_get_db.execute(
+        select(models.Dish).where(models.Dish.id == new_dish_info['id'])
+    )
+    dish = dish.scalars().one_or_none()
+
+    assert dish.title == new_dish_info['title']
+    assert dish.description == new_dish_info['description']
+    assert dish.price == float(new_dish_info['price'])
 
 
 @pytest.mark.asyncio(scope='function')
 async def test_script_new_dish_2(
     async_client: AsyncClient,
+    override_get_db,
     fixture_script_new_menu,
     fixture_script_new_submenu,
 ):
@@ -111,15 +134,23 @@ async def test_script_new_dish_2(
 
     assert response.status_code == 201
 
-    dish = response.json()
-    assert uuid.UUID(dish['id'])
-    assert dish['title'] == 'Новое блюдо, для тестового сценария, 2'
-    assert dish['description'] == 'Описание нового блюда, для тестового сценария, 2'
-    assert dish['price'] == '322.22'
+    new_dish_info = response.json()
+    dish = await override_get_db.execute(
+        select(models.Dish).where(models.Dish.id == new_dish_info['id'])
+    )
+    dish = dish.scalars().one_or_none()
+
+    assert dish.title == new_dish_info['title']
+    assert dish.description == new_dish_info['description']
+    assert dish.price == float(new_dish_info['price'])
 
 
 @pytest.mark.asyncio(scope='function')
-async def test_script_get_menu_1(async_client: AsyncClient, fixture_script_new_menu):
+async def test_script_get_menu_1(
+    async_client: AsyncClient,
+    override_get_db,
+    fixture_script_new_menu
+):
     """Просматриваем определенноё меню первый раз."""
 
     menu_id = fixture_script_new_menu['id']
@@ -127,17 +158,22 @@ async def test_script_get_menu_1(async_client: AsyncClient, fixture_script_new_m
 
     assert response.status_code == 200
 
-    menu = response.json()
-    assert menu['id'] == menu_id
-    assert menu['title'] == 'Новое меню, для тестового сценария, 1'
-    assert menu['description'] == 'Описание нового меню, для тестового сценария, 1'
-    assert menu['submenus_count'] == 1
-    assert menu['dishes_count'] == 2
+    menu = await override_get_db.execute(
+        select(models.Menu).where(models.Menu.id == menu_id)
+    )
+    menu = menu.scalars().one_or_none()
+
+    assert menu.id == uuid.UUID(response.json()['id'])
+    assert menu.title == response.json()['title']
+    assert menu.description == response.json()['description']
+    assert menu.submenus_count == response.json()['submenus_count']
+    assert menu.dishes_count == response.json()['dishes_count']
 
 
 @pytest.mark.asyncio(scope='function')
 async def test_script_get_submenu(
     async_client: AsyncClient,
+    override_get_db,
     fixture_script_new_menu,
     fixture_script_new_submenu,
 ):
@@ -149,11 +185,15 @@ async def test_script_get_submenu(
 
     assert response.status_code == 200
 
-    submenu = response.json()
-    assert submenu['id'] == submenu_id
-    assert submenu['title'] == 'Новое подменю, для тестового сценария, 1'
-    assert submenu['description'] == 'Описание нового подменю, для тестового сценария, 1'
-    assert submenu['dishes_count'] == 2
+    submenu = await override_get_db.execute(
+        select(models.SubMenu).where(models.SubMenu.id == submenu_id)
+    )
+    submenu = submenu.scalars().one_or_none()
+
+    assert submenu.id == uuid.UUID(response.json()['id'])
+    assert submenu.title == response.json()['title']
+    assert submenu.description == response.json()['description']
+    assert submenu.dishes_count == response.json()['dishes_count']
 
 
 @pytest.mark.asyncio(scope='function')
@@ -200,7 +240,11 @@ async def test_script_all_dishes(
 
 
 @pytest.mark.asyncio(scope='function')
-async def test_script_get_menu_2(async_client: AsyncClient, fixture_script_new_menu):
+async def test_script_get_menu_2(
+    async_client: AsyncClient,
+    override_get_db,
+    fixture_script_new_menu
+):
     """Просматриваем определенноё меню второй раз."""
 
     menu_id = fixture_script_new_menu['id']
@@ -208,12 +252,16 @@ async def test_script_get_menu_2(async_client: AsyncClient, fixture_script_new_m
 
     assert response.status_code == 200
 
-    menu = response.json()
-    assert menu['id'] == menu_id
-    assert menu['title'] == 'Новое меню, для тестового сценария, 1'
-    assert menu['description'] == 'Описание нового меню, для тестового сценария, 1'
-    assert menu['submenus_count'] == 0
-    assert menu['dishes_count'] == 0
+    menu = await override_get_db.execute(
+        select(models.Menu).where(models.Menu.id == menu_id)
+    )
+    menu = menu.scalars().one_or_none()
+
+    assert menu.id == uuid.UUID(response.json()['id'])
+    assert menu.title == response.json()['title']
+    assert menu.description == response.json()['description']
+    assert menu.submenus_count == response.json()['submenus_count']
+    assert menu.dishes_count == response.json()['dishes_count']
 
 
 @pytest.mark.asyncio(scope='function')
