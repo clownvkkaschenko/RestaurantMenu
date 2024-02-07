@@ -52,7 +52,9 @@ jobs:
         python -m flake8 restaurant_menu/tests/
     - name: Test with Pytest (menu/routers)
       run: |
-        pytest -v restaurant_menu/tests/test_routers.py
+        pytest -v restaurant_menu/tests/test_dishes.py
+        pytest -v restaurant_menu/tests/test_menu.py
+        pytest -v restaurant_menu/tests/test_submenu.py
     - name: Test with Pytest (postman-script)
       run: |
-        pytest -v restaurant_menu/tests/test_script_count_dishes_and_submenus.py
+        pytest -v restaurant_menu/tests/test_scenario.py

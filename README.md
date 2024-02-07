@@ -8,11 +8,6 @@
   <img src="https://img.shields.io/badge/Pytest-555555?style=for-the-badge&logo=pytest&logoColor=0A9EDC">
 </div>
 
-# Задание 2:
-- ORM запрос, для вывода количества подменю и блюд для меню, написан в файле **menu/crud.py**, в функции «**[get_counts_submenus_and_dishes_from_menu](restaurant_menu/src/menu/crud.py#get_counts_submenus_and_dishes_from_menu)**».
-- CRUD тесты для разработанного API написаны в файле **[tests/test_routers.py](restaurant_menu/tests/test_routers.py)**
-- Тестовый сценарий «Проверка количества блюд и подменю в меню» из Postman реализован в файле **[tests/test_script_count_dishes_and_submenus.py](restaurant_menu/tests/test_script_count_dishes_and_submenus.py)**
-
 # Документация API:
 Restaurant Menu - **[API redoc](https://clownvkkaschenko.github.io/RestaurantMenuAPI/)**
 
