@@ -1,5 +1,6 @@
 """Тестовый сценарий «Проверка количества блюд и количества подменю в меню» из Postman."""
 
+from typing import Dict
 from uuid import UUID
 
 import pytest
@@ -10,18 +11,8 @@ from src.menu import models
 from .conftest import async_session_maker
 
 
-@pytest.fixture(scope='session')
-def fixture_script_new_menu():
-    return {}
-
-
-@pytest.fixture(scope='session')
-def fixture_script_new_submenu():
-    return {}
-
-
 @pytest.mark.asyncio(scope='function')
-async def test_scenario_new_menu(async_client: AsyncClient, fixture_current_menu):
+async def test_scenario_new_menu(async_client: AsyncClient, fixture_current_menu: Dict):
     """Создаём меню."""
 
     response = await async_client.post('/api/v1/menus', json={
@@ -48,12 +39,12 @@ async def test_scenario_new_menu(async_client: AsyncClient, fixture_current_menu
 @pytest.mark.asyncio(scope='function')
 async def test_scenario_new_submenu(
     async_client: AsyncClient,
-    fixture_current_menu,
-    fixture_current_submenu
+    fixture_current_menu: Dict[str, models.Menu],
+    fixture_current_submenu: Dict,
 ):
     """Создаём подменю."""
 
-    menu = fixture_current_menu['obj']
+    menu: models.Menu = fixture_current_menu['obj']
 
     response = await async_client.post(f'/api/v1/menus/{menu.id}/submenus', json={
         'title': 'Новое подменю, для тестового сценария, 1',
@@ -79,13 +70,13 @@ async def test_scenario_new_submenu(
 @pytest.mark.asyncio(scope='function')
 async def test_scenario_new_dish_1(
     async_client: AsyncClient,
-    fixture_current_menu,
-    fixture_current_submenu
+    fixture_current_menu: Dict[str, models.Menu],
+    fixture_current_submenu: Dict[str, models.SubMenu],
 ):
     """Создаём блюдо 1."""
 
-    menu = fixture_current_menu['obj']
-    submenu = fixture_current_submenu['obj']
+    menu: models.Menu = fixture_current_menu['obj']
+    submenu: models.SubMenu = fixture_current_submenu['obj']
 
     response = await async_client.post(
         f'/api/v1/menus/{menu.id}/submenus/{submenu.id}/dishes',
@@ -113,13 +104,13 @@ async def test_scenario_new_dish_1(
 @pytest.mark.asyncio(scope='function')
 async def test_scenario_new_dish_2(
     async_client: AsyncClient,
-    fixture_current_menu,
-    fixture_current_submenu
+    fixture_current_menu: Dict[str, models.Menu],
+    fixture_current_submenu: Dict[str, models.SubMenu],
 ):
     """Создаём блюдо 2."""
 
-    menu = fixture_current_menu['obj']
-    submenu = fixture_current_submenu['obj']
+    menu: models.Menu = fixture_current_menu['obj']
+    submenu: models.SubMenu = fixture_current_submenu['obj']
 
     response = await async_client.post(
         f'/api/v1/menus/{menu.id}/submenus/{submenu.id}/dishes',
@@ -145,12 +136,15 @@ async def test_scenario_new_dish_2(
 
 
 @pytest.mark.asyncio(scope='function')
-async def test_scenario_get_menu_1(async_client: AsyncClient, fixture_current_menu):
+async def test_scenario_get_menu_1(
+    async_client: AsyncClient,
+    fixture_current_menu: Dict[str, models.Menu],
+):
     """Просматриваем определенноё меню первый раз."""
 
-    menu = fixture_current_menu['obj']
-    response = await async_client.get(f'/api/v1/menus/{menu.id}')
+    menu: models.Menu = fixture_current_menu['obj']
 
+    response = await async_client.get(f'/api/v1/menus/{menu.id}')
     assert response.status_code == 200
 
     async with async_session_maker() as session:
@@ -171,13 +165,13 @@ async def test_scenario_get_menu_1(async_client: AsyncClient, fixture_current_me
 @pytest.mark.asyncio(scope='function')
 async def test_scenario_get_submenu(
     async_client: AsyncClient,
-    fixture_current_menu,
-    fixture_current_submenu
+    fixture_current_menu: Dict[str, models.Menu],
+    fixture_current_submenu: Dict[str, models.SubMenu],
 ):
     """Просматриваем определенноё подменю."""
 
-    menu = fixture_current_menu['obj']
-    submenu = fixture_current_submenu['obj']
+    menu: models.Menu = fixture_current_menu['obj']
+    submenu: models.SubMenu = fixture_current_submenu['obj']
 
     response = await async_client.get(f'/api/v1/menus/{menu.id}/submenus/{submenu.id}')
     assert response.status_code == 200
@@ -198,27 +192,29 @@ async def test_scenario_get_submenu(
 @pytest.mark.asyncio(scope='function')
 async def test_scenario_delete_submenu(
     async_client: AsyncClient,
-    fixture_current_menu,
-    fixture_current_submenu
+    fixture_current_menu: Dict[str, models.Menu],
+    fixture_current_submenu: Dict[str, models.SubMenu],
 ):
     """Удаляем подменю."""
 
-    menu = fixture_current_menu['obj']
-    submenu = fixture_current_submenu['obj']
+    menu: models.Menu = fixture_current_menu['obj']
+    submenu: models.SubMenu = fixture_current_submenu['obj']
 
     response = await async_client.delete(f'/api/v1/menus/{menu.id}/submenus/{submenu.id}')
-
     assert response.status_code == 200
     assert response.json() == {'status': True, 'message': 'The submenu has been deleted'}
 
 
 @pytest.mark.asyncio(scope='function')
-async def test_scenario_all_submenus(async_client: AsyncClient, fixture_current_menu):
+async def test_scenario_all_submenus(
+    async_client: AsyncClient,
+    fixture_current_menu: Dict[str, models.Menu],
+):
     """Просматриваем список подменю."""
 
-    menu = fixture_current_menu['obj']
-    response = await async_client.get(f'/api/v1/menus/{menu.id}/submenus')
+    menu: models.Menu = fixture_current_menu['obj']
 
+    response = await async_client.get(f'/api/v1/menus/{menu.id}/submenus')
     assert response.status_code == 200
     assert response.json() == []
 
@@ -226,26 +222,29 @@ async def test_scenario_all_submenus(async_client: AsyncClient, fixture_current_
 @pytest.mark.asyncio(scope='function')
 async def test_scenario_all_dishes(
     async_client: AsyncClient,
-    fixture_current_menu,
-    fixture_current_submenu
+    fixture_current_menu: Dict[str, models.Menu],
+    fixture_current_submenu: Dict,
 ):
     """Просматриваем список блюд."""
 
-    menu = fixture_current_menu['obj']
-    submenu = fixture_current_submenu['obj']
-    response = await async_client.get(f'/api/v1/menus/{menu.id}/submenus/{submenu.id}/dishes')
+    menu: models.Menu = fixture_current_menu['obj']
+    submenu: None = fixture_current_submenu['obj']
 
+    response = await async_client.get(f'/api/v1/menus/{menu.id}/submenus/{submenu.id}/dishes')
     assert response.status_code == 200
     assert response.json() == []
 
 
 @pytest.mark.asyncio(scope='function')
-async def test_scenario_get_menu_2(async_client: AsyncClient, fixture_current_menu):
+async def test_scenario_get_menu_2(
+    async_client: AsyncClient,
+    fixture_current_menu: Dict[str, models.Menu],
+):
     """Просматриваем определенноё меню второй раз."""
 
-    menu = fixture_current_menu['obj']
-    response = await async_client.get(f'/api/v1/menus/{menu.id}')
+    menu: models.Menu = fixture_current_menu['obj']
 
+    response = await async_client.get(f'/api/v1/menus/{menu.id}')
     assert response.status_code == 200
 
     async with async_session_maker() as session:
@@ -264,12 +263,15 @@ async def test_scenario_get_menu_2(async_client: AsyncClient, fixture_current_me
 
 
 @pytest.mark.asyncio(scope='function')
-async def test_scenario_delete_menu(async_client: AsyncClient, fixture_current_menu):
+async def test_scenario_delete_menu(
+    async_client: AsyncClient,
+    fixture_current_menu: Dict[str, models.Menu],
+):
     """Удаляем меню."""
 
-    menu = fixture_current_menu['obj']
-    response = await async_client.delete(f'/api/v1/menus/{menu.id}')
+    menu: models.Menu = fixture_current_menu['obj']
 
+    response = await async_client.delete(f'/api/v1/menus/{menu.id}')
     assert response.status_code == 200
     assert response.json() == {'status': True, 'message': 'The menu has been deleted'}
 
@@ -279,6 +281,5 @@ async def test_scenario_all_menus(async_client: AsyncClient):
     """Просматриваем список меню."""
 
     response = await async_client.get('/api/v1/menus')
-
     assert response.status_code == 200
     assert response.json() == []

@@ -1,4 +1,3 @@
-# import asyncio
 from typing import AsyncGenerator
 
 import pytest
@@ -43,16 +42,6 @@ async def prepare_database():
         await conn.run_sync(Base.metadata.drop_all)
 
 
-# @pytest.fixture(scope='session', autouse=True)
-# def event_loop():
-#     try:
-#         loop = asyncio.get_event_loop_policy().new_event_loop()
-#     except RuntimeError:
-#         loop = asyncio.new_event_loop()
-#     yield loop
-#     loop.close()
-
-
 @pytest.fixture(scope='session', autouse=True)
 async def async_client() -> AsyncGenerator[AsyncClient, None]:
     async with AsyncClient(app=app, base_url='http://test') as ac:
@@ -81,20 +70,20 @@ def dish_data():
 
 @pytest.fixture(scope='session')
 async def fixture_current_menu():
-    """"""
+    """Хранение текущего меню в тестах."""
 
     return {}
 
 
 @pytest.fixture(scope='session')
 async def fixture_current_submenu():
-    """"""
+    """Хранение текущего подменю в тестах."""
 
     return {}
 
 
 @pytest.fixture(scope='session')
 async def fixture_current_dish():
-    """"""
+    """Хранение текущего блюда в тестах."""
 
     return {}

@@ -1,5 +1,6 @@
 """Тест ручек, для работы с блюдами."""
 
+from typing import Dict
 from uuid import UUID
 
 import pytest
@@ -12,33 +13,40 @@ from .handlers import MenuHandler, SubMenuHandler
 
 
 @pytest.fixture(scope='session')
-async def fixture_menu_for_dish(menu_data):
-    """"""
+async def fixture_menu_for_dish(menu_data: Dict[str, str]) -> models.Menu:
+    """Создаём объект меню, для создания подменю."""
 
     menu_handler = MenuHandler()
     return await menu_handler.create_menu(**menu_data)
 
 
 @pytest.fixture(scope='session')
-async def fixture_submenu_for_dish(fixture_menu_for_dish, submenu_data):
-    """"""
+async def fixture_submenu_for_dish(
+    fixture_menu_for_dish: models.Menu,
+    submenu_data: Dict[str, str],
+) -> models.SubMenu:
+    """Создаём объект подменю, для создания блюда."""
+
+    menu: models.Menu = fixture_menu_for_dish
 
     submenu_handler = SubMenuHandler()
-    return await submenu_handler.create_submenu(fixture_menu_for_dish.id, **submenu_data)
+    return await submenu_handler.create_submenu(menu.id, **submenu_data)
 
 
 @pytest.mark.asyncio(scope='function')
 async def test_all_empty_dishes(
     async_client: AsyncClient,
-    fixture_menu_for_dish,
-    fixture_submenu_for_dish
+    fixture_menu_for_dish: models.Menu,
+    fixture_submenu_for_dish: models.SubMenu,
 ):
     """Тестируем роутер для вывода списка всех блюд, при условии, что блюдо не создано."""
 
+    menu: models.Menu = fixture_menu_for_dish
+    submenu: models.SubMenu = fixture_submenu_for_dish
+
     response = await async_client.get(
-        f'/api/v1/menus/{fixture_menu_for_dish.id}/submenus/'
-        f'{fixture_submenu_for_dish.id}/dishes'
-    )
+        f'/api/v1/menus/{menu.id}/submenus/{submenu.id}/dishes')
+
     assert response.status_code == 200
     assert response.json() == []
 
@@ -46,15 +54,17 @@ async def test_all_empty_dishes(
 @pytest.mark.asyncio(scope='function')
 async def test_new_dish(
     async_client: AsyncClient,
-    fixture_menu_for_dish,
-    fixture_submenu_for_dish,
-    fixture_current_dish
+    fixture_menu_for_dish: models.Menu,
+    fixture_submenu_for_dish: models.SubMenu,
+    fixture_current_dish: Dict,
 ):
     """Тестируем роутер для создания нового блюда."""
 
+    menu: models.Menu = fixture_menu_for_dish
+    submenu: models.SubMenu = fixture_submenu_for_dish
+
     response = await async_client.post(
-        f'/api/v1/menus/{fixture_menu_for_dish.id}/submenus/'
-        f'{fixture_submenu_for_dish.id}/dishes',
+        f'/api/v1/menus/{menu.id}/submenus/{submenu.id}/dishes',
         json={
             'title': 'Новое блюдо 1',
             'description': 'Описание нового блюда 1',
@@ -70,7 +80,7 @@ async def test_new_dish(
         dish = dish.scalars().one_or_none()
 
     assert dish.id is not None
-    assert dish.submenu_id == fixture_submenu_for_dish.id
+    assert dish.submenu_id == submenu.id
     assert dish.title == 'Новое блюдо 1'
     assert dish.description == 'Описание нового блюда 1'
     assert dish.price == 120.22
@@ -81,14 +91,16 @@ async def test_new_dish(
 @pytest.mark.asyncio(scope='function')
 async def test_error_new_dish(
     async_client: AsyncClient,
-    fixture_menu_for_dish,
-    fixture_submenu_for_dish
+    fixture_menu_for_dish: models.Menu,
+    fixture_submenu_for_dish: models.SubMenu,
 ):
     """Тестируем получение ошибки при создании блюда с существующим названием."""
 
+    menu: models.Menu = fixture_menu_for_dish
+    submenu: models.SubMenu = fixture_submenu_for_dish
+
     response = await async_client.post(
-        f'/api/v1/menus/{fixture_menu_for_dish.id}/submenus/'
-        f'{fixture_submenu_for_dish.id}/dishes',
+        f'/api/v1/menus/{menu.id}/submenus/{submenu.id}/dishes',
         json={
             'title': 'Новое блюдо 1',
             'description': 'Описание нового блюда 2',
@@ -102,14 +114,16 @@ async def test_error_new_dish(
 @pytest.mark.asyncio(scope='function')
 async def test_all_dishes(
     async_client: AsyncClient,
-    fixture_menu_for_dish,
-    fixture_submenu_for_dish
+    fixture_menu_for_dish: models.Menu,
+    fixture_submenu_for_dish: models.SubMenu,
 ):
     """Тестируем роутер для вывода списка всех блюд, для определённого подменю."""
 
+    menu: models.Menu = fixture_menu_for_dish
+    submenu: models.SubMenu = fixture_submenu_for_dish
+
     response = await async_client.get(
-        f'/api/v1/menus/{fixture_menu_for_dish.id}/submenus/'
-        f'{fixture_submenu_for_dish.id}/dishes'
+        f'/api/v1/menus/{menu.id}/submenus/{submenu.id}/dishes'
     )
     assert response.status_code == 200
     assert response.json() != []
@@ -118,17 +132,18 @@ async def test_all_dishes(
 @pytest.mark.asyncio(scope='function')
 async def test_get_dish(
     async_client: AsyncClient,
-    fixture_menu_for_dish,
-    fixture_submenu_for_dish,
-    fixture_current_dish
+    fixture_menu_for_dish: models.Menu,
+    fixture_submenu_for_dish: models.SubMenu,
+    fixture_current_dish: Dict[str, models.Dish],
 ):
     """Тестируем роутер для вывода определённого блюда."""
 
-    dish = fixture_current_dish['obj']
+    menu: models.Menu = fixture_menu_for_dish
+    submenu: models.SubMenu = fixture_submenu_for_dish
+    dish: models.Dish = fixture_current_dish['obj']
 
     response = await async_client.get(
-        f'/api/v1/menus/{fixture_menu_for_dish.id}/submenus/'
-        f'{fixture_submenu_for_dish.id}/dishes/{dish.id}'
+        f'/api/v1/menus/{menu.id}/submenus/{submenu.id}/dishes/{dish.id}'
     )
     assert response.status_code == 200
     assert dish.id == UUID(response.json()['id'])
@@ -141,14 +156,17 @@ async def test_get_dish(
 @pytest.mark.asyncio(scope='function')
 async def test_error_get_dish(
     async_client: AsyncClient,
-    fixture_menu_for_dish,
-    fixture_submenu_for_dish
+    fixture_menu_for_dish: models.Menu,
+    fixture_submenu_for_dish: models.SubMenu,
 ):
     """Тестируем получение ошибки при выводе определённого блюда с несуществующим «id»."""
 
+    menu: models.Menu = fixture_menu_for_dish
+    submenu: models.SubMenu = fixture_submenu_for_dish
+
     response = await async_client.get(
-        (f'/api/v1/menus/{fixture_menu_for_dish.id}/submenus/'
-         f'{fixture_submenu_for_dish.id}/dishes/497f6eca-6276-4993-bfeb-53cbbbba6f08')
+        (f'/api/v1/menus/{menu.id}/submenus/{submenu.id}/'
+         f'dishes/497f6eca-6276-4993-bfeb-53cbbbba6f08')
     )
     assert response.status_code == 404
     assert response.json() == {'detail': 'dish not found'}
@@ -157,23 +175,24 @@ async def test_error_get_dish(
 @pytest.mark.asyncio(scope='function')
 async def test_update_dish(
     async_client: AsyncClient,
-    fixture_menu_for_dish,
-    fixture_submenu_for_dish,
-    fixture_current_dish,
+    fixture_menu_for_dish: models.Menu,
+    fixture_submenu_for_dish: models.SubMenu,
+    fixture_current_dish: Dict[str, models.Dish],
 ):
     """Тестируем роутер для обновления информации о блюде."""
 
-    dish = fixture_current_dish['obj']
+    menu: models.Menu = fixture_menu_for_dish
+    submenu: models.SubMenu = fixture_submenu_for_dish
+    dish: models.Dish = fixture_current_dish['obj']
+
     response = await async_client.patch(
-        f'/api/v1/menus/{fixture_menu_for_dish.id}/submenus/'
-        f'{fixture_submenu_for_dish.id}/dishes/{dish.id}',
+        f'/api/v1/menus/{menu.id}/submenus/{submenu.id}/dishes/{dish.id}',
         json={
             'title': 'Update title dish',
             'description': 'Update description dish',
             'price': 220.11
         }
     )
-
     assert response.status_code == 200
 
     async with async_session_maker() as session:
@@ -191,19 +210,19 @@ async def test_update_dish(
 @pytest.mark.asyncio(scope='function')
 async def test_delete_dish(
     async_client: AsyncClient,
-    fixture_menu_for_dish,
-    fixture_submenu_for_dish,
-    fixture_current_dish
+    fixture_menu_for_dish: models.Menu,
+    fixture_submenu_for_dish: models.SubMenu,
+    fixture_current_dish: Dict[str, models.Dish],
 ):
     """Тестируем роутер для удаления блюда."""
 
-    dish = fixture_current_dish['obj']
+    menu: models.Menu = fixture_menu_for_dish
+    submenu: models.SubMenu = fixture_submenu_for_dish
+    dish: models.Dish = fixture_current_dish['obj']
 
     response = await async_client.delete(
-        f'/api/v1/menus/{fixture_menu_for_dish.id}/submenus/'
-        f'{fixture_submenu_for_dish.id}/dishes/{dish.id}',
+        f'/api/v1/menus/{menu.id}/submenus/{submenu.id}/dishes/{dish.id}',
     )
-
     assert response.status_code == 200
     assert response.json() == {'status': True, 'message': 'The dish has been deleted'}
 
