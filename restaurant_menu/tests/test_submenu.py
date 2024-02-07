@@ -6,7 +6,7 @@ from uuid import UUID
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
-from src.menu import models
+from src import models
 
 from .conftest import async_session_maker
 from .handlers import MenuHandler

@@ -1,7 +1,7 @@
 from uuid import UUID, uuid4
 
 from sqlalchemy import delete
-from src.menu import models
+from src import models
 
 from .conftest import async_session_maker
 
