@@ -36,21 +36,12 @@ async def all_menus(db: AsyncSession = Depends(get_db)) -> List[Optional[models.
 async def get_menu(
     menu_id: UUID = Path(..., description='id меню'),
     db: AsyncSession = Depends(get_db),
-) -> schemas.DetailedMenuInfoPyd:
+) -> Dict:
     """Выводим определённое меню по его «id»."""
 
-    menu, submenus_count, dishes_count = await crud.get_counts_submenus_and_dishes_from_menu(
-        db=db,
-        menu_id=menu_id,
-    )
+    menu: Dict = await crud.get_menu_by_id_using_orm(db=db, menu_id=menu_id)
 
-    menu_info = schemas.SmallMenuInfoPyd.model_validate({**menu.__dict__})
-
-    return schemas.DetailedMenuInfoPyd.model_validate(
-        {
-            **menu_info.model_dump(),
-            **{'submenus_count': submenus_count, 'dishes_count': dishes_count}
-        })
+    return menu
 
 
 @menu_router.patch('/api/v1/menus/{menu_id}', response_model=schemas.DetailedMenuInfoPyd,

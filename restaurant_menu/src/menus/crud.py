@@ -1,6 +1,6 @@
 """CRUD-functions."""
 
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -8,35 +8,6 @@ from sqlalchemy import Row, delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from src import models
-
-
-async def get_counts_submenus_and_dishes_from_menu(
-        db: AsyncSession,
-        menu_id: UUID
-) -> Row[Tuple[models.Menu, int, int]]:
-    """ORM запрос для вывода количества подменю и количества блюд для меню."""
-
-    query = (
-        select(
-            models.Menu,
-            func.count(models.SubMenu.id.distinct()).label('submenus_count'),
-            func.count(models.Dish.id.distinct()).label('dishes_count')
-        )
-        .where(models.Menu.id == menu_id)
-        .select_from(models.Menu).outerjoin(models.SubMenu).outerjoin(models.Dish)
-        .group_by(models.Menu.id)
-    )
-
-    result = await db.execute(query)
-    menu_info: Row[Tuple[models.Menu, int, int]] | None = result.fetchone()
-
-    if menu_info is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='menu not found',
-        )
-
-    return menu_info
 
 
 async def create_menu(
@@ -169,3 +140,53 @@ async def delete_menu_by_id(
 
     await db.execute(delete(models.Menu).where(models.Menu.id == menu_id))
     await db.commit()
+
+
+async def get_menu_by_id_using_orm(
+        db: AsyncSession,
+        menu_id: UUID
+) -> Dict[str, Union[UUID, str, int]]:
+    """
+    Получаем объект из модели «Menu» по полю «id», с использованием ORM запроса для
+    подсчёта количества подменю и количества блюд в меню.
+
+    Args:
+        - db (AsyncSession): Асинхронная сессия для подключения к БД.
+        - menu_id (UUID): id меню.
+
+    Returns:
+       - Возвращаем словарь, в котором ключами являются названия колонок из таблицы,
+         а значениями являются данные меню.
+    """
+
+    query = (
+        select(
+            models.Menu.id,
+            models.Menu.title,
+            models.Menu.description,
+            func.count(models.SubMenu.id.distinct()).label('submenus_count'),
+            func.count(models.Dish.id.distinct()).label('dishes_count')
+        )
+        .where(models.Menu.id == menu_id)
+        .select_from(models.Menu).outerjoin(models.SubMenu).outerjoin(models.Dish)
+        .group_by(models.Menu.id)
+    )
+
+    result = await db.execute(query)
+    menu_info: Row[Tuple[UUID, str, str, int, int]] | None = result.fetchone()
+
+    if menu_info is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='menu not found',
+        )
+
+    menu_dict: Dict[str, Union[UUID, str, int]] = {
+        'id': menu_info[0],
+        'title': menu_info[1],
+        'description': menu_info[2],
+        'submenus_count': menu_info[3],
+        'dishes_count': menu_info[4]
+    }
+
+    return menu_dict
