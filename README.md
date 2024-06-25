@@ -9,7 +9,7 @@
 </div>
 
 # Документация API:
-Restaurant Menu - **[API redoc](https://clownvkkaschenko.github.io/RestaurantMenuAPI/)**
+Restaurant Menu - **[API redoc](https://kaschenkkko.github.io/RestaurantMenuAPI/)**
 
 # Запуск проекта через докер:
 
